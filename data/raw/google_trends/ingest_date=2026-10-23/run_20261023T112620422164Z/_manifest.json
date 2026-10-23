@@ -1,0 +1,181 @@
+{
+  "run_id": "run_20261023T112620422164Z",
+  "dataset": "google_trends",
+  "status": "SUCCESS",
+  "source": {
+    "name": "Google Trends",
+    "url": "https://trends.google.com/trends/explore",
+    "access": "pytrends (unofficial API wrapper)",
+    "terms": "Google Terms of Service; dữ liệu chỉ số tương đối 0-100, dùng cho mục đích học tập"
+  },
+  "params": {
+    "timeframe": "today 3-m",
+    "geo": "VN",
+    "keyword_groups": [
+      [
+        "tai nghe bluetooth",
+        "sạc dự phòng",
+        "đồng hồ thông minh",
+        "loa bluetooth",
+        "chuột không dây"
+      ],
+      [
+        "kem chống nắng",
+        "son môi",
+        "serum vitamin c",
+        "sữa rửa mặt",
+        "nước tẩy trang"
+      ],
+      [
+        "nồi chiên không dầu",
+        "máy lọc không khí",
+        "robot hút bụi",
+        "máy xay sinh tố",
+        "quạt điều hòa"
+      ],
+      [
+        "áo khoác nữ",
+        "giày sneaker",
+        "túi xách nữ",
+        "áo polo nam",
+        "váy công sở"
+      ]
+    ]
+  },
+  "ingest_started_utc": "2026-10-23T11:26:20.422164+00:00",
+  "ingest_ended_utc": "2026-10-23T11:27:22.481221+00:00",
+  "duration_sec": 62.059,
+  "destination": "data/raw/google_trends/ingest_date=2026-10-23/run_20261023T112620422164Z",
+  "file_count": 8,
+  "total_bytes": 63251,
+  "total_records": 372,
+  "files": [
+    {
+      "file": "interest_over_time_g1.csv",
+      "path": "data/raw/google_trends/ingest_date=2026-10-23/run_20261023T112620422164Z/interest_over_time_g1.csv",
+      "bytes": 3166,
+      "sha256": "c0ed5c6abee4b3b6166c7529b02d822c1f1f31a6adcc45703a6172ca4096dc26",
+      "records": 93,
+      "duplicate_of_run": null,
+      "keywords": [
+        "tai nghe bluetooth",
+        "sạc dự phòng",
+        "đồng hồ thông minh",
+        "loa bluetooth",
+        "chuột không dây"
+      ]
+    },
+    {
+      "file": "related_queries_g1.json",
+      "path": "data/raw/google_trends/ingest_date=2026-10-23/run_20261023T112620422164Z/related_queries_g1.json",
+      "bytes": 12923,
+      "sha256": "4d42ddb3339bfc93b3ffc3bf62fa682cb9b00b906900ffdcf363e6da3759ca91",
+      "records": 0,
+      "duplicate_of_run": null,
+      "keywords": [
+        "tai nghe bluetooth",
+        "sạc dự phòng",
+        "đồng hồ thông minh",
+        "loa bluetooth",
+        "chuột không dây"
+      ]
+    },
+    {
+      "file": "interest_over_time_g2.csv",
+      "path": "data/raw/google_trends/ingest_date=2026-10-23/run_20261023T112620422164Z/interest_over_time_g2.csv",
+      "bytes": 3100,
+      "sha256": "ea5cf6068cd7629351a03e6a40b68a153690ce2b0e75c0b5f06c9b81b4a73356",
+      "records": 93,
+      "duplicate_of_run": null,
+      "keywords": [
+        "kem chống nắng",
+        "son môi",
+        "serum vitamin c",
+        "sữa rửa mặt",
+        "nước tẩy trang"
+      ]
+    },
+    {
+      "file": "related_queries_g2.json",
+      "path": "data/raw/google_trends/ingest_date=2026-10-23/run_20261023T112620422164Z/related_queries_g2.json",
+      "bytes": 12085,
+      "sha256": "4ccd3fdee08b55c10794ab7a89e783924f784d150495e77b46b76cd874094730",
+      "records": 0,
+      "duplicate_of_run": null,
+      "keywords": [
+        "kem chống nắng",
+        "son môi",
+        "serum vitamin c",
+        "sữa rửa mặt",
+        "nước tẩy trang"
+      ]
+    },
+    {
+      "file": "interest_over_time_g3.csv",
+      "path": "data/raw/google_trends/ingest_date=2026-10-23/run_20261023T112620422164Z/interest_over_time_g3.csv",
+      "bytes": 3088,
+      "sha256": "9afdcb6f8b53a4a2b7ab23e5da79f591388b652bdf60fc96e93763935f89651d",
+      "records": 93,
+      "duplicate_of_run": null,
+      "keywords": [
+        "nồi chiên không dầu",
+        "máy lọc không khí",
+        "robot hút bụi",
+        "máy xay sinh tố",
+        "quạt điều hòa"
+      ]
+    },
+    {
+      "file": "related_queries_g3.json",
+      "path": "data/raw/google_trends/ingest_date=2026-10-23/run_20261023T112620422164Z/related_queries_g3.json",
+      "bytes": 14592,
+      "sha256": "c75983a86639d6f2cabd468e7e204f1883676b5d698f446939e26de1bf5ada42",
+      "records": 0,
+      "duplicate_of_run": null,
+      "keywords": [
+        "nồi chiên không dầu",
+        "máy lọc không khí",
+        "robot hút bụi",
+        "máy xay sinh tố",
+        "quạt điều hòa"
+      ]
+    },
+    {
+      "file": "interest_over_time_g4.csv",
+      "path": "data/raw/google_trends/ingest_date=2026-10-23/run_20261023T112620422164Z/interest_over_time_g4.csv",
+      "bytes": 2859,
+      "sha256": "fb625630813468b8fac422171fc3f7ed88dd01e30bfac5399fbead582874bd99",
+      "records": 93,
+      "duplicate_of_run": null,
+      "keywords": [
+        "áo khoác nữ",
+        "giày sneaker",
+        "túi xách nữ",
+        "áo polo nam",
+        "váy công sở"
+      ]
+    },
+    {
+      "file": "related_queries_g4.json",
+      "path": "data/raw/google_trends/ingest_date=2026-10-23/run_20261023T112620422164Z/related_queries_g4.json",
+      "bytes": 11438,
+      "sha256": "6d27364b9a481b01470cef1fb00ceec7ed6fac3c38a01bda7bd6a21fc85493c2",
+      "records": 0,
+      "duplicate_of_run": null,
+      "keywords": [
+        "áo khoác nữ",
+        "giày sneaker",
+        "túi xách nữ",
+        "áo polo nam",
+        "váy công sở"
+      ]
+    }
+  ],
+  "errors": [],
+  "job": {
+    "script": "ingest_google_trends.py",
+    "host": "LAPTOP-4S69TE16",
+    "python": "3.11.9",
+    "git_commit": null
+  }
+}

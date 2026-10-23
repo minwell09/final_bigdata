@@ -1,0 +1,15 @@
+============================================================
+ENV CHECK - 2026-10-23T11:06:16.074438+00:00
+============================================================
+OS        : Windows-10-10.0.26200-SP0
+Python    : 3.11.9 | D:\ron_bigdata\trend-affiliate-bigdata\.venv\Scripts\python.exe
+JAVA_HOME : C:\Program Files\Eclipse Adoptium\jdk-17.0.20.101-hotspot
+Java      : openjdk version "17.0.20.1" 2026-08-18
+PySpark   : 3.5.3
+Spark     : 3.5.3
+Master    : local[*]
+Cores     : 12
+Count     : 1000000
+Sum 1..100: 5050
+Elapsed   : 6.2s
+RESULT    : PASS

@@ -1,0 +1,33 @@
+{
+  "project": "AI truy xuất xu hướng để gắn nhãn affiliate cho sàn TMĐT",
+  "google_trends": {
+    "geo": "VN",
+    "hl": "vi-VN",
+    "tz": 420,
+    "timeframe": "today 3-m",
+    "keyword_groups": [
+      ["tai nghe bluetooth", "sạc dự phòng", "đồng hồ thông minh", "loa bluetooth", "chuột không dây"],
+      ["kem chống nắng", "son môi", "serum vitamin c", "sữa rửa mặt", "nước tẩy trang"],
+      ["nồi chiên không dầu", "máy lọc không khí", "robot hút bụi", "máy xay sinh tố", "quạt điều hòa"],
+      ["áo khoác nữ", "giày sneaker", "túi xách nữ", "áo polo nam", "váy công sở"]
+    ],
+    "sleep_between_requests_sec": 8,
+    "max_retries": 3
+  },
+  "google_trends_rss": {
+    "url": "https://trends.google.com/trending/rss?geo=VN"
+  },
+  "tiki": {
+    "base_url": "https://tiki.vn/api/personalish/v1/blocks/listings",
+    "limit": 40,
+    "pages_per_category": 3,
+    "sleep_between_requests_sec": 1.5,
+    "categories": [
+      {"id": 1789, "url_key": "dien-thoai-may-tinh-bang", "name": "Điện thoại - Máy tính bảng"},
+      {"id": 1815, "url_key": "thiet-bi-kts-phu-kien-so", "name": "Thiết bị số - Phụ kiện số"},
+      {"id": 1520, "url_key": "lam-dep-suc-khoe", "name": "Làm đẹp - Sức khỏe"},
+      {"id": 1882, "url_key": "dien-gia-dung", "name": "Điện gia dụng"},
+      {"id": 931, "url_key": "thoi-trang-nu", "name": "Thời trang nữ"}
+    ]
+  }
+}

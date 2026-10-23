@@ -1,0 +1,6 @@
+pyspark==3.5.3
+pytrends==4.9.2
+requests>=2.31
+pandas>=2.0,<2.3
+numpy<2.1
+python-dotenv>=1.0

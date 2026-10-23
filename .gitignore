@@ -1,0 +1,23 @@
+# Python / venv
+.venv/
+__pycache__/
+*.pyc
+
+# Secrets
+.env
+
+# Raw data lớn: KHÔNG commit (chỉ commit manifest + sample nhỏ)
+data/raw/**
+!data/raw/.gitkeep
+!data/raw/**/_manifest.json
+
+# Spark
+spark-warehouse/
+metastore_db/
+derby.log
+
+# Logs chi tiết (giữ evidence chính)
+logs/*.log
+!logs/env_check.txt
+!logs/verify_raw.txt
+!logs/ingest_run.txt
