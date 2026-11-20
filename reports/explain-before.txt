@@ -1,0 +1,101 @@
+== Physical Plan ==
+* Sort (17)
++- Exchange (16)
+   +- * HashAggregate (15)
+      +- * HashAggregate (14)
+         +- * Project (13)
+            +- * Project (12)
+               +- * SortMergeJoin Inner (11)
+                  :- * Sort (5)
+                  :  +- Exchange (4)
+                  :     +- * Filter (3)
+                  :        +- * ColumnarToRow (2)
+                  :           +- Scan parquet  (1)
+                  +- * Sort (10)
+                     +- Exchange (9)
+                        +- * Filter (8)
+                           +- * ColumnarToRow (7)
+                              +- Scan parquet  (6)
+
+
+(1) Scan parquet 
+Output [5]: [category_id#1L, price#3, discount_rate#5, rating_average#6, sold#8L]
+Batched: true
+Location: InMemoryFileIndex [file:/home/minwell0309/trend-affiliate-bigdata/data/benchmark/products_fact.parquet]
+PushedFilters: [IsNotNull(price), GreaterThan(price,0.0), IsNotNull(category_id)]
+ReadSchema: struct<category_id:bigint,price:double,discount_rate:double,rating_average:double,sold:bigint>
+
+(2) ColumnarToRow [codegen id : 1]
+Input [5]: [category_id#1L, price#3, discount_rate#5, rating_average#6, sold#8L]
+
+(3) Filter [codegen id : 1]
+Input [5]: [category_id#1L, price#3, discount_rate#5, rating_average#6, sold#8L]
+Condition : ((isnotnull(price#3) AND (price#3 > 0.0)) AND isnotnull(category_id#1L))
+
+(4) Exchange
+Input [5]: [category_id#1L, price#3, discount_rate#5, rating_average#6, sold#8L]
+Arguments: hashpartitioning(category_id#1L, 64), ENSURE_REQUIREMENTS, [plan_id=76]
+
+(5) Sort [codegen id : 2]
+Input [5]: [category_id#1L, price#3, discount_rate#5, rating_average#6, sold#8L]
+Arguments: [category_id#1L ASC NULLS FIRST], false, 0
+
+(6) Scan parquet 
+Output [3]: [category_id#23L, category_name#24, avg_trend_interest#26]
+Batched: true
+Location: InMemoryFileIndex [file:/home/minwell0309/trend-affiliate-bigdata/data/benchmark/category_trends.parquet]
+PushedFilters: [IsNotNull(category_id)]
+ReadSchema: struct<category_id:bigint,category_name:string,avg_trend_interest:double>
+
+(7) ColumnarToRow [codegen id : 3]
+Input [3]: [category_id#23L, category_name#24, avg_trend_interest#26]
+
+(8) Filter [codegen id : 3]
+Input [3]: [category_id#23L, category_name#24, avg_trend_interest#26]
+Condition : isnotnull(category_id#23L)
+
+(9) Exchange
+Input [3]: [category_id#23L, category_name#24, avg_trend_interest#26]
+Arguments: hashpartitioning(category_id#23L, 64), ENSURE_REQUIREMENTS, [plan_id=85]
+
+(10) Sort [codegen id : 4]
+Input [3]: [category_id#23L, category_name#24, avg_trend_interest#26]
+Arguments: [category_id#23L ASC NULLS FIRST], false, 0
+
+(11) SortMergeJoin [codegen id : 5]
+Left keys [1]: [category_id#1L]
+Right keys [1]: [category_id#23L]
+Join type: Inner
+Join condition: None
+
+(12) Project [codegen id : 5]
+Output [5]: [category_id#1L, price#3, sold#8L, category_name#24, round((((least(40.0, (LOG1P(cast(sold#8L as double)) * 5.0)) + (rating_average#6 * 4.0)) + least(15.0, (discount_rate#5 * 0.3))) + (avg_trend_interest#26 * 0.25)), 4) AS trend_score#123]
+Input [8]: [category_id#1L, price#3, discount_rate#5, rating_average#6, sold#8L, category_id#23L, category_name#24, avg_trend_interest#26]
+
+(13) Project [codegen id : 5]
+Output [6]: [category_id#1L, price#3, sold#8L, category_name#24, trend_score#123, CASE WHEN (trend_score#123 >= 65.0) THEN HOT WHEN (trend_score#123 >= 45.0) THEN RISING WHEN (trend_score#123 >= 25.0) THEN STABLE ELSE COLD END AS affiliate_label#144]
+Input [5]: [category_id#1L, price#3, sold#8L, category_name#24, trend_score#123]
+
+(14) HashAggregate [codegen id : 5]
+Input [6]: [category_id#1L, price#3, sold#8L, category_name#24, trend_score#123, affiliate_label#144]
+Keys [3]: [category_id#1L, category_name#24, affiliate_label#144]
+Functions [5]: [partial_count(1), partial_avg(trend_score#123), partial_sum((price#3 * cast(sold#8L as double))), partial_min(trend_score#123), partial_max(trend_score#123)]
+Aggregate Attributes [6]: [count#205L, sum#206, count#207L, sum#208, min#209, max#210]
+Results [9]: [category_id#1L, category_name#24, affiliate_label#144, count#211L, sum#212, count#213L, sum#214, min#215, max#216]
+
+(15) HashAggregate [codegen id : 5]
+Input [9]: [category_id#1L, category_name#24, affiliate_label#144, count#211L, sum#212, count#213L, sum#214, min#215, max#216]
+Keys [3]: [category_id#1L, category_name#24, affiliate_label#144]
+Functions [5]: [count(1), avg(trend_score#123), sum((price#3 * cast(sold#8L as double))), min(trend_score#123), max(trend_score#123)]
+Aggregate Attributes [5]: [count(1)#187L, avg(trend_score#123)#189, sum((price#3 * cast(sold#8L as double)))#191, min(trend_score#123)#193, max(trend_score#123)#195]
+Results [8]: [category_id#1L, category_name#24, affiliate_label#144, count(1)#187L AS item_count#188L, round(avg(trend_score#123)#189, 4) AS avg_trend_score#190, sum((price#3 * cast(sold#8L as double)))#191 AS gmv_proxy#192, min(trend_score#123)#193 AS min_score#194, max(trend_score#123)#195 AS max_score#196]
+
+(16) Exchange
+Input [8]: [category_id#1L, category_name#24, affiliate_label#144, item_count#188L, avg_trend_score#190, gmv_proxy#192, min_score#194, max_score#196]
+Arguments: rangepartitioning(category_id#1L ASC NULLS FIRST, affiliate_label#144 ASC NULLS FIRST, 64), ENSURE_REQUIREMENTS, [plan_id=96]
+
+(17) Sort [codegen id : 6]
+Input [8]: [category_id#1L, category_name#24, affiliate_label#144, item_count#188L, avg_trend_score#190, gmv_proxy#192, min_score#194, max_score#196]
+Arguments: [category_id#1L ASC NULLS FIRST, affiliate_label#144 ASC NULLS FIRST], true, 0
+
+

@@ -10,6 +10,8 @@ __pycache__/
 data/raw/**
 !data/raw/.gitkeep
 !data/raw/**/_manifest.json
+data/benchmark/
+data/output/
 
 # Spark
 spark-warehouse/

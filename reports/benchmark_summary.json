@@ -1,0 +1,35 @@
+{
+  "baseline_runs_sec": [
+    16.4448,
+    15.8309,
+    16.2282
+  ],
+  "baseline_median_sec": 16.2282,
+  "optimized_runs_sec": [
+    13.4581,
+    13.4666,
+    13.3015
+  ],
+  "optimized_median_sec": 13.4581,
+  "improvement_pct": 17.07,
+  "correctness_assertions": {
+    "row_count_match": true,
+    "summary_rows_match": true,
+    "label_distribution_match": true,
+    "gmv_proxy_match": true,
+    "schema_contract_match": true
+  },
+  "correctness_pass": true,
+  "label_distribution": {
+    "COLD": 204000,
+    "HOT": 267000,
+    "RISING": 285000,
+    "STABLE": 123000
+  },
+  "total_items": 879000,
+  "total_gmv_proxy": 1185342843433500.0,
+  "spark_version": "3.5.3",
+  "master": "local[2]",
+  "driver_memory": "2g",
+  "shuffle_partitions": "64"
+}
