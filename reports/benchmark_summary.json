@@ -1,35 +1,136 @@
 {
-  "baseline_runs_sec": [
-    16.4448,
-    15.8309,
-    16.2282
-  ],
-  "baseline_median_sec": 16.2282,
-  "optimized_runs_sec": [
-    13.4581,
-    13.4666,
-    13.3015
-  ],
-  "optimized_median_sec": 13.4581,
-  "improvement_pct": 17.07,
-  "correctness_assertions": {
-    "row_count_match": true,
-    "summary_rows_match": true,
-    "label_distribution_match": true,
-    "gmv_proxy_match": true,
-    "schema_contract_match": true
-  },
-  "correctness_pass": true,
-  "label_distribution": {
-    "COLD": 204000,
-    "HOT": 267000,
-    "RISING": 285000,
-    "STABLE": 123000
-  },
-  "total_items": 879000,
-  "total_gmv_proxy": 1185342843433500.0,
   "spark_version": "3.5.3",
   "master": "local[2]",
   "driver_memory": "2g",
-  "shuffle_partitions": "64"
+  "total_items": 1172000,
+  "summary_rows": 19,
+  "total_gmv_proxy": 1580457124578000.0,
+  "min_score": 3.3231,
+  "max_score": 88.779,
+  "label_distribution": {
+    "COLD": 273637,
+    "HOT": 355820,
+    "RISING": 379090,
+    "STABLE": 163453
+  },
+  "output_checksum": "f7dc7bd06fbfa7de06aa06c9282d73bcf9e49d8355f748792d5f635f055c8fd5",
+  "experiments": {
+    "baseline": {
+      "exp_id": "E00",
+      "runs_sec": [
+        19.2437,
+        18.7557,
+        18.0421
+      ],
+      "median_sec": 18.7557,
+      "spread_pct": 6.41,
+      "improvement_vs_baseline_pct": 0.0,
+      "shuffle_read_bytes": 14395,
+      "shuffle_write_bytes": 8615,
+      "shuffle_total_mb": 0.022,
+      "num_stages": 7,
+      "num_tasks": 425,
+      "max_task_time_ms": 2840,
+      "median_task_time_ms": 23,
+      "executor_run_time_ms": 12278,
+      "correctness_assertions": {
+        "row_count_match": true,
+        "summary_rows_match": true,
+        "zero_null_or_dup_keys": true,
+        "label_distribution_match": true,
+        "gmv_proxy_match": true,
+        "schema_contract_match": true,
+        "output_checksum_match": true
+      },
+      "correctness_pass": true
+    },
+    "e01_bhj": {
+      "exp_id": "E01",
+      "runs_sec": [
+        19.0887,
+        18.7439,
+        18.4767
+      ],
+      "median_sec": 18.7439,
+      "spread_pct": 3.27,
+      "improvement_vs_baseline_pct": 0.06,
+      "shuffle_read_bytes": 14395,
+      "shuffle_write_bytes": 8615,
+      "shuffle_total_mb": 0.022,
+      "num_stages": 7,
+      "num_tasks": 425,
+      "max_task_time_ms": 3046,
+      "median_task_time_ms": 22,
+      "executor_run_time_ms": 12313,
+      "correctness_assertions": {
+        "row_count_match": true,
+        "summary_rows_match": true,
+        "zero_null_or_dup_keys": true,
+        "label_distribution_match": true,
+        "gmv_proxy_match": true,
+        "schema_contract_match": true,
+        "output_checksum_match": true
+      },
+      "correctness_pass": true
+    },
+    "e02_part": {
+      "exp_id": "E02",
+      "runs_sec": [
+        13.7727,
+        13.4418,
+        13.3115
+      ],
+      "median_sec": 13.4418,
+      "spread_pct": 3.43,
+      "improvement_vs_baseline_pct": 28.33,
+      "shuffle_read_bytes": 11579,
+      "shuffle_write_bytes": 7207,
+      "shuffle_total_mb": 0.018,
+      "num_stages": 7,
+      "num_tasks": 30,
+      "max_task_time_ms": 2651,
+      "median_task_time_ms": 114.0,
+      "executor_run_time_ms": 7761,
+      "correctness_assertions": {
+        "row_count_match": true,
+        "summary_rows_match": true,
+        "zero_null_or_dup_keys": true,
+        "label_distribution_match": true,
+        "gmv_proxy_match": true,
+        "schema_contract_match": true,
+        "output_checksum_match": true
+      },
+      "correctness_pass": true
+    },
+    "e03_cache": {
+      "exp_id": "E03",
+      "runs_sec": [
+        21.9882,
+        21.7474,
+        22.3704
+      ],
+      "median_sec": 21.9882,
+      "spread_pct": 2.83,
+      "improvement_vs_baseline_pct": -17.23,
+      "shuffle_read_bytes": 11695,
+      "shuffle_write_bytes": 7323,
+      "shuffle_total_mb": 0.018,
+      "num_stages": 9,
+      "num_tasks": 33,
+      "max_task_time_ms": 9987,
+      "median_task_time_ms": 111,
+      "executor_run_time_ms": 17605,
+      "correctness_assertions": {
+        "row_count_match": true,
+        "summary_rows_match": true,
+        "zero_null_or_dup_keys": true,
+        "label_distribution_match": true,
+        "gmv_proxy_match": true,
+        "schema_contract_match": true,
+        "output_checksum_match": true
+      },
+      "correctness_pass": true
+    }
+  },
+  "all_correctness_pass": true
 }

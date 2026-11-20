@@ -1,0 +1,72 @@
+[
+  {
+    "stageId": 7,
+    "name": "parquet at NativeMethodAccessorImpl.java:0",
+    "numTasks": 8,
+    "executorRunTimeMs": 1025,
+    "shuffleReadBytes": 2835,
+    "shuffleWriteBytes": 0,
+    "maxTaskMs": 377,
+    "medianTaskMs": 176
+  },
+  {
+    "stageId": 6,
+    "name": "parquet at NativeMethodAccessorImpl.java:0",
+    "numTasks": 8,
+    "executorRunTimeMs": 202,
+    "shuffleReadBytes": 4372,
+    "shuffleWriteBytes": 2835,
+    "maxTaskMs": 82,
+    "medianTaskMs": 53
+  },
+  {
+    "stageId": 4,
+    "name": "parquet at NativeMethodAccessorImpl.java:0",
+    "numTasks": 8,
+    "executorRunTimeMs": 544,
+    "shuffleReadBytes": 4372,
+    "shuffleWriteBytes": 0,
+    "maxTaskMs": 185,
+    "medianTaskMs": 88
+  },
+  {
+    "stageId": 3,
+    "name": "parquet at NativeMethodAccessorImpl.java:0",
+    "numTasks": 2,
+    "executorRunTimeMs": 3756,
+    "shuffleReadBytes": 0,
+    "shuffleWriteBytes": 4372,
+    "maxTaskMs": 2549,
+    "medianTaskMs": 1947
+  },
+  {
+    "stageId": 2,
+    "name": "$anonfun$withThreadLocalCaptured$1 at FutureTask.java:317",
+    "numTasks": 2,
+    "executorRunTimeMs": 1823,
+    "shuffleReadBytes": 0,
+    "shuffleWriteBytes": 0,
+    "maxTaskMs": 1011,
+    "medianTaskMs": 946
+  },
+  {
+    "stageId": 1,
+    "name": "csv at NativeMethodAccessorImpl.java:0",
+    "numTasks": 1,
+    "executorRunTimeMs": 96,
+    "shuffleReadBytes": 0,
+    "shuffleWriteBytes": 0,
+    "maxTaskMs": 164,
+    "medianTaskMs": 164
+  },
+  {
+    "stageId": 0,
+    "name": "parquet at NativeMethodAccessorImpl.java:0",
+    "numTasks": 1,
+    "executorRunTimeMs": 371,
+    "shuffleReadBytes": 0,
+    "shuffleWriteBytes": 0,
+    "maxTaskMs": 611,
+    "medianTaskMs": 611
+  }
+]

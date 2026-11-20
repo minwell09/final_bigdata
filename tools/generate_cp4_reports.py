@@ -1,7 +1,8 @@
-"""Sinh biểu đồ benchmark + báo cáo Checkpoint 4 (DOCX & 6-slide PPTX)."""
+"""Sinh biểu đồ 4 experiments + điền trực tiếp báo cáo DOCX & PPTX từ template gốc giảng viên."""
 from __future__ import annotations
 
 import json
+import subprocess
 from pathlib import Path
 
 import matplotlib
@@ -9,47 +10,62 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from docx import Document
 from pptx import Presentation
-from pptx.util import Inches, Pt
-from pptx.dml.color import RGBColor
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 REPORTS_DIR = PROJECT_ROOT / "reports"
 DOCS_DIR = PROJECT_ROOT / "docs"
+TEMPLATE_DOCX = Path("/home/minwell0309/BigData_DoAn4_Brief_Checkpoint4_Template.docx")
+TEMPLATE_PPTX = Path("/home/minwell0309/BigData_DoAn4_Checkpoint4_Report_Template.pptx")
+
+
+def git_rev(ref: str, fallback: str) -> str:
+    try:
+        out = subprocess.check_output(
+            ["git", "rev-parse", "--short", ref],
+            cwd=PROJECT_ROOT,
+            stderr=subprocess.DEVNULL,
+            text=True,
+        ).strip()
+        return out or fallback
+    except Exception:
+        return fallback
 
 
 def make_chart(summary: dict, out_png: Path) -> None:
-    b_runs = summary["baseline_runs_sec"]
-    o_runs = summary["optimized_runs_sec"]
-    b_med = summary["baseline_median_sec"]
-    o_med = summary["optimized_median_sec"]
+    exps = summary["experiments"]
+    order = ["baseline", "e01_bhj", "e02_part", "e03_cache"]
+    labels = [
+        "E00\nBaseline\n(200 part)",
+        "E01\nBroadcast\n(REVERT)",
+        "E02\n8 Partitions\n(KEEP)",
+        "E03\nCache 1-pass\n(REVERT)",
+    ]
+    medians = [exps[k]["median_sec"] for k in order]
+    tasks = [exps[k]["num_tasks"] for k in order]
+    colors = ["#6C757D", "#F0AD4E", "#2E8B57", "#D9534F"]
 
-    fig, axes = plt.subplots(1, 2, figsize=(10, 4.2), dpi=150)
+    fig, axes = plt.subplots(1, 2, figsize=(11, 4.4), dpi=150)
 
-    # Panel 1: Per-run runtime
-    x = [1, 2, 3]
-    axes[0].plot(x, b_runs, marker="o", linewidth=2.2, color="#D9534F", label="Baseline (SortMergeJoin)")
-    axes[0].plot(x, o_runs, marker="s", linewidth=2.2, color="#2E8B57", label="Optimized (BroadcastHashJoin)")
-    axes[0].set_title("Runtime theo từng run (3 runs)")
-    axes[0].set_xlabel("Run #")
+    # Panel 1: Median Runtime across E00..E03
+    bars1 = axes[0].bar(labels, medians, color=colors, width=0.55)
+    axes[0].set_title("Median Runtime qua 4 thực nghiệm (3 runs/EXP)")
     axes[0].set_ylabel("Thời gian (giây)")
-    axes[0].set_xticks(x)
-    axes[0].set_ylim(0, max(b_runs) * 1.2)
-    axes[0].grid(True, linestyle="--", alpha=0.4)
-    axes[0].legend()
+    axes[0].set_ylim(0, max(medians) * 1.22)
+    axes[0].grid(axis="y", linestyle="--", alpha=0.4)
+    for bar, k in zip(bars1, order):
+        val = exps[k]["median_sec"]
+        pct = exps[k]["improvement_vs_baseline_pct"]
+        tag = f"{val:.2f}s" if k == "baseline" else f"{val:.2f}s\n({-pct:+.1f}%)"
+        axes[0].text(bar.get_x() + bar.get_width() / 2, val + 0.4, tag, ha="center", fontsize=9, fontweight="bold")
 
-    # Panel 2: Median comparison
-    bars = axes[1].bar(
-        ["Baseline\n(SortMergeJoin)", "Optimized\n(BroadcastHashJoin)"],
-        [b_med, o_med],
-        color=["#D9534F", "#2E8B57"],
-        width=0.5,
-    )
-    axes[1].set_title(f"Median Runtime (-{summary['improvement_pct']}%)")
-    axes[1].set_ylabel("Thời gian (giây)")
-    axes[1].set_ylim(0, b_med * 1.25)
+    # Panel 2: Total Spark Tasks (Spark UI)
+    bars2 = axes[1].bar(labels, tasks, color=colors, width=0.55)
+    axes[1].set_title("Tổng số Spark Tasks (Spark UI REST API)")
+    axes[1].set_ylabel("Số tasks")
+    axes[1].set_ylim(0, max(tasks) * 1.2)
     axes[1].grid(axis="y", linestyle="--", alpha=0.4)
-    for bar, val in zip(bars, [b_med, o_med]):
-        axes[1].text(bar.get_x() + bar.get_width() / 2, val + 0.4, f"{val:.3f}s", ha="center", fontweight="bold")
+    for bar, val in zip(bars2, tasks):
+        axes[1].text(bar.get_x() + bar.get_width() / 2, val + 8, f"{val}", ha="center", fontsize=10, fontweight="bold")
 
     plt.tight_layout()
     out_png.parent.mkdir(parents=True, exist_ok=True)
@@ -57,86 +73,7 @@ def make_chart(summary: dict, out_png: Path) -> None:
     plt.close()
 
 
-def make_docx(summary: dict, chart_png: Path, out_docx: Path) -> None:
-    template_docx = Path("/home/minwell0309/BigData_DoAn4_Brief_Checkpoint4_Template.docx")
-    doc = Document(str(template_docx))
-
-    b_r = summary["baseline_runs_sec"]
-    o_r = summary["optimized_runs_sec"]
-    b_med = summary["baseline_median_sec"]
-    o_med = summary["optimized_median_sec"]
-    imp = summary["improvement_pct"]
-
-    replacements = {
-        49: (
-            "Nhóm: Trần Tấn Toàn, Phạm Xuân Khoa, Hồ Tuấn Anh, Trần Thanh Lam    |    "
-            "Baseline commit: baseline-cp4 (4089894)    |    Optimized commit: checkpoint-4 (cb6d99f)"
-        ),
-        51: (
-            f"• Input/workload: products_fact.parquet ({summary['total_items']:,} dòng, 5.74 MB) JOIN "
-            f"category_trends.parquet (5 dòng, 3.85 KB), sinh từ dữ liệu raw thật (data/raw/ Tiki + Google Trends).\n"
-            f"• Pipeline: src/pipeline_affiliate_spark.py (Filter price>0 → Join category_id → Tính trend_score → "
-            f"Gắn nhãn affiliate HOT/RISING/STABLE/COLD → GroupBy → Ghi Parquet).\n"
-            f"• Resources & Spark configs (cố định): Spark {summary['spark_version']}, master={summary['master']}, "
-            f"driver.memory={summary['driver_memory']}, shuffle.partitions={summary['shuffle_partitions']}, "
-            f"autoBroadcastJoinThreshold=-1, adaptive.enabled=false (cold JVM mỗi run, không cache).\n"
-            f"• Kết quả Baseline (3 runs): Run 1 = {b_r[0]:.3f}s | Run 2 = {b_r[1]:.3f}s | Run 3 = {b_r[2]:.3f}s "
-            f"→ Median = {b_med:.3f}s (GMV proxy = {summary['total_gmv_proxy']:,.0f})."
-        ),
-        53: (
-            "• Observation: Execution plan baseline (reports/explain-before.txt, explain('formatted')) cho thấy "
-            "toán tử join thực thi bằng SortMergeJoin [category_id], [category_id], Inner (operator 11).\n"
-            "• Plan evidence: Trước khi join, Spark phát sinh 2× Exchange hashpartitioning(category_id, 64) "
-            "(operator 4 & 9) và 2× Sort [category_id ASC] (operator 5 & 10) trên cả bảng fact lớn (879,000 dòng) "
-            "lẫn bảng dim nhỏ (5 dòng).\n"
-            "• Bottleneck claim: Chúng tôi cho rằng nút thắt nằm ở SortMergeJoin (operator 4–5–11) vì Spark phải "
-            "shuffle và sort toàn bộ 879,000 dòng bảng fact chỉ để join với bảng dimension 5 dòng (3.85 KB)."
-        ),
-        55: (
-            "• Hypothesis (If–Then): Nếu nút thắt SortMergeJoin xảy ra vì Spark phải shuffle và sort toàn bộ "
-            "879,000 dòng bảng fact khi join với bảng category_trends rất nhỏ (5 dòng, 3.85 KB), thì khi áp dụng "
-            "một thay đổi duy nhất F.broadcast(dim_df), chúng tôi kỳ vọng execution plan chuyển sang BroadcastHashJoin "
-            "(loại bỏ Exchange & Sort trên bảng fact) và giảm median runtime, trong khi mọi correctness metrics giữ nguyên.\n"
-            "• Change (1 biến duy nhất trong src/pipeline_affiliate_spark.py):\n"
-            "   - Before: fact_df.join(dim_df, on='category_id', how='inner')\n"
-            "   - After : fact_df.join(F.broadcast(dim_df), on='category_id', how='inner')\n"
-            "• Control: Giữ cố định 100% input, tài nguyên (local[2], 2g), shuffle.partitions=64, AQE=false, cold JVM."
-        ),
-        57: (
-            f"• Runtime Baseline (3 runs): {b_r[0]:.3f}s, {b_r[1]:.3f}s, {b_r[2]:.3f}s → Median: {b_med:.3f}s (spread ~3.8%)\n"
-            f"• Runtime After    (3 runs): {o_r[0]:.3f}s, {o_r[1]:.3f}s, {o_r[2]:.3f}s → Median: {o_med:.3f}s (spread ~1.2%)\n"
-            f"• Cải thiện (Δ): -{b_med - o_med:.3f}s (-{imp:.2f}%), vượt xa độ biến động giữa các run.\n"
-            f"• Execution signal (reports/explain-after.txt): SortMergeJoin (2× Exchange + 2× Sort) → "
-            f"BroadcastHashJoin + BroadcastExchange (0 Exchange/Sort trên bảng fact).\n"
-            f"• Chi tiết lưu tại: reports/benchmark.csv, reports/experiment-log.md, reports/benchmark_before_after.png."
-        ),
-        59: (
-            f"Bộ 5 correctness assertions đều PASS (không regression):\n"
-            f"1. row_count_match: PASS ({summary['total_items']:,} == {summary['total_items']:,})\n"
-            f"2. summary_rows_match: PASS (19 == 19 dòng bảng tổng hợp)\n"
-            f"3. label_distribution_match: PASS (HOT: 267,000 | RISING: 285,000 | STABLE: 123,000 | COLD: 204,000)\n"
-            f"4. gmv_proxy_match: PASS ({summary['total_gmv_proxy']:,.0f}, chênh lệch < 1e-2)\n"
-            f"5. schema_contract_match: PASS (schema output giữ nguyên hoàn toàn)"
-        ),
-        61: (
-            f"• Quyết định: KEEP thay đổi E01 (F.broadcast(dim_df)).\n"
-            f"• Lý do: Giảm median runtime {imp:.2f}% (ổn định qua 3 runs, vượt xa variance), xác nhận đúng tín hiệu "
-            f"BroadcastHashJoin trên explain-after.txt và PASS 5/5 correctness assertions.\n"
-            f"• Giới hạn: Đo trên local[2] với 879k dòng (5.74 MB) nên thời gian khởi tạo JVM chiếm tỷ trọng lớn; "
-            f"chỉ áp dụng broadcast() khi bảng dimension đủ nhỏ so với bộ nhớ driver/executor để tránh OOM.\n"
-            f"• Next action (Buổi 11): Thiết kế tầng Storage (Parquet partitioning theo category_id/ingest_date, Data Lake)."
-        ),
-    }
-
-    for idx, text in replacements.items():
-        doc.paragraphs[idx].text = text
-
-    out_docx.parent.mkdir(parents=True, exist_ok=True)
-    doc.save(out_docx)
-
-
 def set_text_preserve_style(shape, lines: list[str]) -> None:
-    """Thay nội dung text_frame nhưng giữ nguyên font/color/size của template."""
     tf = shape.text_frame
     base_p = tf.paragraphs[0]
     base_font = base_p.runs[0].font if base_p.runs else base_p.font
@@ -160,127 +97,200 @@ def set_text_preserve_style(shape, lines: list[str]) -> None:
             run.font.color.rgb = font_color
 
 
-def make_pptx(summary: dict, chart_png: Path, out_pptx: Path) -> None:
-    template_path = Path("/home/minwell0309/BigData_DoAn4_Checkpoint4_Report_Template.pptx")
-    prs = Presentation(str(template_path))
+def make_docx(summary: dict, out_docx: Path, base_hash: str, opt_hash: str) -> None:
+    doc = Document(str(TEMPLATE_DOCX))
+    e00 = summary["experiments"]["baseline"]
+    e01 = summary["experiments"]["e01_bhj"]
+    e02 = summary["experiments"]["e02_part"]
+    e03 = summary["experiments"]["e03_cache"]
+    ld = summary["label_distribution"]
 
-    b_r = summary["baseline_runs_sec"]
-    o_r = summary["optimized_runs_sec"]
-    b_med = summary["baseline_median_sec"]
-    o_med = summary["optimized_median_sec"]
-    imp = summary["improvement_pct"]
+    replacements = {
+        49: (
+            f"Nhóm: Trần Tấn Toàn, Phạm Xuân Khoa, Hồ Tuấn Anh, Trần Thanh Lam    |    "
+            f"Baseline commit: baseline-cp4 ({base_hash})    |    Optimized commit: optimized-cp4 ({opt_hash})"
+        ),
+        51: (
+            f"• Input/workload: products_fact.parquet ({summary['total_items']:,} dòng, 10.29 MB) JOIN "
+            f"trends_dim.csv (32,500 dòng, 12.92 MB), sinh từ raw thật (Tiki + Google Trends + RSS).\n"
+            f"• Pipeline: src/pipeline_affiliate_spark.py (Filter price>0 → Join trend_key → Tính trend_score → "
+            f"Gắn nhãn HOT/RISING/STABLE/COLD → GroupBy → Ghi Parquet).\n"
+            f"• Resources & Spark configs (mặc định Spark, cố định): Spark {summary['spark_version']}, "
+            f"master={summary['master']}, driver.memory={summary['driver_memory']}, shuffle.partitions=200, "
+            f"autoBroadcastJoinThreshold=10MB, adaptive.enabled=false (cold JVM mỗi run, không cache).\n"
+            f"• Baseline E00 (3 runs): {e00['runs_sec'][0]:.3f}s / {e00['runs_sec'][1]:.3f}s / {e00['runs_sec'][2]:.3f}s "
+            f"→ Median = {e00['median_sec']:.3f}s (spread {e00['spread_pct']}%). Spark UI: {e00['num_tasks']} tasks, "
+            f"medianTask={e00['median_task_time_ms']}ms, maxTask={e00['max_task_time_ms']}ms, execTime={e00['executor_run_time_ms']}ms."
+        ),
+        53: (
+            f"• Observation (explain-before.txt): Catalyst đã tự động BroadcastHashJoin sau column-pruning bảng dim, "
+            f"nhưng ở bước GroupBy & Sort sinh 2× Exchange với 200 partitions: (12) Exchange hashpartitioning(..., 200) "
+            f"và (14) Exchange rangepartitioning(..., 200).\n"
+            f"• Spark UI telemetry (spark_ui_stages_before.json): Tổng {e00['num_tasks']} tasks chạy trên {e00['num_stages']} stages "
+            f"chỉ để xử lý {(e00['shuffle_read_bytes']+e00['shuffle_write_bytes'])/1024:.1f} KB shuffle và ghi {summary['summary_rows']} dòng summary; "
+            f"median task chỉ {e00['median_task_time_ms']}ms trong khi tổng executor time lên tới {e00['executor_run_time_ms']}ms.\n"
+            f"• Bottleneck claim: Chúng tôi cho rằng nút thắt nằm ở over-partitioning (shuffle.partitions=200 ở operator 12 & 14) "
+            f"gây scheduling overhead và ghi nhiều file nhỏ không cần thiết trên local[2]."
+        ),
+        55: (
+            f"• Hypothesis chính (E02): Nếu nút thắt over-partitioning xảy ra vì mặc định shuffle.partitions=200 tạo {e00['num_tasks']} task "
+            f"siêu nhỏ (median={e00['median_task_time_ms']}ms) trên local[2], thì khi giảm duy nhất spark.sql.shuffle.partitions từ 200 → 8 "
+            f"(4× cores), kỳ vọng số task giảm ~90%, executor time & median runtime giảm mạnh, trong khi 7 correctness assertions giữ nguyên.\n"
+            f"• Change (1 biến duy nhất trong src/pipeline_affiliate_spark.py): spark.sql.shuffle.partitions: 200 → 8.\n"
+            f"• Các thử nghiệm đối chứng (1 biến/EXP): E01 (thêm F.broadcast tường minh → {e01['median_sec']:.3f}s, +0.06% < variance → REVERT); "
+            f"E03 (thêm scored.cache() 1-pass → {e03['median_sec']:.3f}s, chậm +63.6% vs E02, maxTask={e03['max_task_time_ms']}ms → REVERT)."
+        ),
+        57: (
+            f"• Median Runtime: {e00['median_sec']:.3f}s → {e02['median_sec']:.3f}s | Δ = -{e00['median_sec']-e02['median_sec']:.3f}s (-{e02['improvement_vs_baseline_pct']}%) "
+            f"(vượt xa spread {e02['spread_pct']}%).\n"
+            f"• Total Tasks (Spark UI): {e00['num_tasks']} → {e02['num_tasks']} (-{(1 - e02['num_tasks']/e00['num_tasks'])*100:.1f}%).\n"
+            f"• Executor Run Time: {e00['executor_run_time_ms']:,}ms → {e02['executor_run_time_ms']:,}ms (-{(1 - e02['executor_run_time_ms']/e00['executor_run_time_ms'])*100:.1f}%).\n"
+            f"• Shuffle Read / Write: {e00['shuffle_read_bytes']/1024:.1f}KB / {e00['shuffle_write_bytes']/1024:.1f}KB → "
+            f"{e02['shuffle_read_bytes']/1024:.1f}KB / {e02['shuffle_write_bytes']/1024:.1f}KB (-18.4% overhead).\n"
+            f"• Max Task Time: {e00['max_task_time_ms']}ms → {e02['max_task_time_ms']}ms (-6.7%). Chi tiết tại reports/benchmark.csv."
+        ),
+        59: (
+            f"Toàn bộ 7/7 correctness assertions PASS (không regression trên mọi EXP):\n"
+            f"1. row_count_match: PASS ({summary['total_items']:,} == {summary['total_items']:,})\n"
+            f"2. summary_rows_match: PASS ({summary['summary_rows']} == {summary['summary_rows']})\n"
+            f"3. zero_null_or_dup_keys: PASS (0 null keys, 0 duplicate keys)\n"
+            f"4. label_distribution_match: PASS (HOT:{ld['HOT']:,} | RISING:{ld['RISING']:,} | STABLE:{ld['STABLE']:,} | COLD:{ld['COLD']:,})\n"
+            f"5. gmv_proxy_match: PASS ({summary['total_gmv_proxy']:,.0f}, sai số < 1e-2)\n"
+            f"6. schema_contract_match: PASS | 7. output_checksum_match: PASS (SHA-256={summary['output_checksum'][:16]}…)"
+        ),
+        61: (
+            f"• Quyết định: KEEP E02 (shuffle.partitions=8); REVERT E01 (không hiệu quả do Catalyst đã auto-broadcast) "
+            f"và REVERT E03 (cache 1-pass làm chậm +63.6%, maxTask tăng 3.8× lên {e03['max_task_time_ms']}ms).\n"
+            f"• Lý do: Giảm {e02['improvement_vs_baseline_pct']}% median runtime, giảm 92.9% tasks ({e00['num_tasks']}→{e02['num_tasks']}), "
+            f"giảm 36.8% executor CPU time và PASS 7/7 correctness (kể cả SHA-256 checksum).\n"
+            f"• Giới hạn: Đo trên local[2] với 1.17M dòng (~23 MB input); khi scale 10×–100× trên cluster lớn cần tăng "
+            f"shuffle.partitions theo số cores/dữ liệu hoặc bật AQE coalescePartitions.\n"
+            f"• Next action (Buổi 11): Thiết kế tầng Storage (Parquet partitioning, nén Snappy/Zstd, Data Lake)."
+        ),
+    }
+    for idx, text in replacements.items():
+        doc.paragraphs[idx].text = text
+
+    out_docx.parent.mkdir(parents=True, exist_ok=True)
+    doc.save(out_docx)
+
+
+def make_pptx(summary: dict, out_pptx: Path, base_hash: str, opt_hash: str) -> None:
+    prs = Presentation(str(TEMPLATE_PPTX))
+    e00 = summary["experiments"]["baseline"]
+    e01 = summary["experiments"]["e01_bhj"]
+    e02 = summary["experiments"]["e02_part"]
+    e03 = summary["experiments"]["e03_cache"]
+    ld = summary["label_distribution"]
 
     # SLIDE 1: Cover + KPI cards
     s1 = prs.slides[0].shapes
     set_text_preserve_style(s1[2], [
-        "Nhóm: Trần Tấn Toàn, Phạm Xuân Khoa, Hồ Tuấn Anh, Trần Thanh Lam   •   Baseline: baseline-cp4   •   Optimized: checkpoint-4 (4089894)"
+        f"Nhóm: Trần Tấn Toàn, Phạm Xuân Khoa, Hồ Tuấn Anh, Trần Thanh Lam   •   Baseline: baseline-cp4 ({base_hash})   •   Optimized: optimized-cp4 ({opt_hash})"
     ])
-    set_text_preserve_style(s1[4], ["MEDIAN RUNTIME", f"{o_med:.2f} s"])
-    set_text_preserve_style(s1[6], ["SPEEDUP", f"-{imp:.2f} %"])
-    set_text_preserve_style(s1[8], ["CORRECTNESS", "PASS (5/5)"])
+    set_text_preserve_style(s1[4], ["MEDIAN RUNTIME", f"{e02['median_sec']:.2f} s"])
+    set_text_preserve_style(s1[6], ["SPEEDUP", f"-{e02['improvement_vs_baseline_pct']:.1f} %"])
+    set_text_preserve_style(s1[8], ["CORRECTNESS", "PASS (7/7)"])
 
     # SLIDE 2: 01 • Baseline
     s2 = prs.slides[1].shapes
     set_text_preserve_style(s2[4], [
-        "• Dataset: products_fact (879,000 rows, 5.74 MB) JOIN category_trends (5 rows, 3.85 KB)",
-        "• Input: data/benchmark/*.parquet (từ data/raw/ Tiki + Google Trends)",
+        f"• Dataset: products_fact ({summary['total_items']:,} rows, 10.29 MB) JOIN trends_dim (32.5k rows, 12.92 MB)",
+        "• Input: data/benchmark/* (từ raw Tiki + Google Trends + RSS)",
         "• Output: data/output/<mode>/ (Parquet)",
-        "• Steps: Filter(price>0) → Join(category_id) → Trend Score → Affiliate Label → GroupBy",
+        "• Steps: Filter → Join → Trend Score → Affiliate Label → GroupBy → Sort",
     ])
     set_text_preserve_style(s2[7], [
-        f"• Spark: {summary['spark_version']} (PySpark)",
+        f"• Spark: {summary['spark_version']} (mặc định autoBroadcast=10MB)",
         f"• Master: {summary['master']} | Driver: {summary['driver_memory']}",
-        f"• shuffle.partitions = {summary['shuffle_partitions']}",
-        "• autoBroadcastJoinThreshold = -1 | AQE = false (cold JVM mỗi run)",
+        "• shuffle.partitions = 200 (Spark default)",
+        "• AQE = false | Cold JVM mỗi run (no cache)",
     ])
     set_text_preserve_style(s2[10], [
-        f"• Run 1 / 2 / 3: {b_r[0]:.3f}s / {b_r[1]:.3f}s / {b_r[2]:.3f}s",
-        f"• Median runtime: {b_med:.3f}s",
-        f"• Rows processed: {summary['total_items']:,} (Summary: 19 rows)",
+        f"• Run 1 / 2 / 3: {e00['runs_sec'][0]:.2f}s / {e00['runs_sec'][1]:.2f}s / {e00['runs_sec'][2]:.2f}s",
+        f"• Median: {e00['median_sec']:.3f}s | Tasks: {e00['num_tasks']} | Exec: {e00['executor_run_time_ms']}ms",
+        f"• Rows out: {summary['total_items']:,} items → {summary['summary_rows']} summary rows",
         f"• GMV proxy: {summary['total_gmv_proxy']:,.0f}",
     ])
     set_text_preserve_style(s2[11], [
-        "Evidence: reports/benchmark.csv, reports/explain-before.txt, tag baseline-cp4."
+        "Evidence: reports/benchmark.csv, reports/explain-before.txt, reports/spark_ui_stages_before.json."
     ])
 
     # SLIDE 3: 02 • Bottleneck Evidence
     s3 = prs.slides[2].shapes
     set_text_preserve_style(s3[4], [
-        "• Physical Join là SortMergeJoin [category_id]",
-        "• 2× Exchange hashpartitioning(category_id, 64)",
-        "• 2× Sort [category_id ASC] trước khi join",
-        "• Shuffle toàn bộ 879,000 dòng fact chỉ để join bảng dim 5 dòng (3.85 KB)",
+        f"• Over-partitioning: {e00['num_tasks']} tasks cho chỉ 22.5 KB shuffle & 19 dòng output",
+        "• 2× Exchange(..., 200) tại operator (12) HashAggregate & (14) Sort",
+        f"• Median task = {e00['median_task_time_ms']} ms (hàng trăm task rỗng) vs Exec time = {e00['executor_run_time_ms']} ms",
+        "• Catalyst đã tự BroadcastHashJoin → join KHÔNG còn là nút thắt chính",
     ])
     set_text_preserve_style(s3[7], [
-        "File: reports/explain-before.txt (explain('formatted'))",
-        "Stage/Operator: (4) Exchange hashpartitioning(64) → (5) Sort → (11) SortMergeJoin Inner",
-        "Cả 2 nhánh products_fact (879k) và category_trends (5) đều bị shuffle & sort.",
+        "Plan: reports/explain-before.txt → (12) Exchange hashpartitioning(200), (14) rangepartitioning(200)",
+        f"Spark UI (spark_ui_stages_before.json): 7 stages, {e00['num_tasks']} tasks, maxTask={e00['max_task_time_ms']}ms, medianTask={e00['median_task_time_ms']}ms",
     ])
     set_text_preserve_style(s3[10], [
-        "“Chúng tôi cho rằng nút thắt nằm ở SortMergeJoin (operator 4-5-11) vì Spark phải shuffle và sort toàn bộ 879,000 dòng bảng fact thay vì broadcast bảng dim 5 dòng.”"
+        "“Chúng tôi cho rằng nút thắt nằm ở over-partitioning (shuffle.partitions=200 tại operator 12 & 14) vì 425 task siêu nhỏ gây scheduling và small-file write overhead trên local[2].”"
     ])
 
     # SLIDE 4: 03 • Hypothesis & Change
     s4 = prs.slides[3].shapes
     set_text_preserve_style(s4[4], [
-        "Nếu SortMergeJoin gây shuffle + sort toàn bộ 879,000 dòng bảng fact vì không broadcast bảng dim nhỏ (5 dòng), thì khi bọc F.broadcast(dim_df), chúng tôi kỳ vọng plan chuyển sang BroadcastHashJoin và giảm median runtime trong khi output giữ nguyên."
+        "Nếu over-partitioning (200 partitions) tạo 425 task siêu nhỏ (median 23ms) cho 22.5 KB shuffle, thì khi giảm duy nhất spark.sql.shuffle.partitions từ 200 → 8 (4× cores), kỳ vọng số task giảm ~90% và median runtime giảm mạnh trong khi output giữ nguyên."
     ])
     set_text_preserve_style(s4[7], [
-        "File: src/pipeline_affiliate_spark.py (1 thay đổi duy nhất)",
-        "Before: fact_df.join(dim_df, on='category_id', how='inner')",
-        "After : fact_df.join(F.broadcast(dim_df), on='category_id', how='inner')",
+        "Thay đổi giữ lại (E02 – 1 biến duy nhất):",
+        "Before: spark.sql.shuffle.partitions = 200 (default)",
+        "After : spark.sql.shuffle.partitions = 8",
+        f"Đối chứng: E01 (broadcast tường minh: REVERT +0.06%), E03 (cache 1-pass: REVERT {e03['median_sec']:.2f}s)",
     ])
     set_text_preserve_style(s4[10], [
-        "• Plan: SortMergeJoin → BroadcastHashJoin + BroadcastExchange",
-        "• Loại bỏ Exchange (4) và Sort (5) trên bảng fact 879k dòng",
-        "• Runtime kỳ vọng: giảm rõ rệt (>10%), vượt run-to-run variance",
+        "• Plan: Exchange(200) → Exchange(8) ở operator (12) & (14)",
+        "• Spark UI: Total tasks giảm mạnh (~425 → ~30), giảm executor time",
+        "• Runtime kỳ vọng: giảm >20%, vượt xa run-to-run variance",
     ])
     set_text_preserve_style(s4[13], [
-        "Giữ cố định 100%: cùng input (879k rows), local[2], driver=2g, shuffle.partitions=64, AQE=false, cold JVM."
+        "Giữ cố định 100%: cùng input (1.17M rows), local[2], driver=2g, autoBroadcast=10MB, AQE=false, cold JVM."
     ])
 
-    # SLIDE 5: 04 • Before / After
+    # SLIDE 5: 04 • Before / After (GIỮ NGUYÊN 100% TÊN METRIC CỦA TEMPLATE THẦY!)
     s5 = prs.slides[4].shapes
-    set_text_preserve_style(s5[13], [f"{b_med:.3f} s"])
-    set_text_preserve_style(s5[15], [f"{o_med:.3f} s"])
-    set_text_preserve_style(s5[17], [f"-{imp:.2f}% (-{b_med - o_med:.3f}s)"])
+    set_text_preserve_style(s5[13], [f"{e00['median_sec']:.3f} s"])
+    set_text_preserve_style(s5[15], [f"{e02['median_sec']:.3f} s"])
+    set_text_preserve_style(s5[17], [f"-{e02['improvement_vs_baseline_pct']:.2f}% (-{e00['median_sec']-e02['median_sec']:.2f}s)"])
 
-    set_text_preserve_style(s5[19], ["Join Strategy / Shuffle"])
-    set_text_preserve_style(s5[21], ["SortMergeJoin (2× Exchange)"])
-    set_text_preserve_style(s5[23], ["BroadcastHashJoin (0 fact Exchange)"])
-    set_text_preserve_style(s5[25], ["Bỏ shuffle & sort fact"])
+    set_text_preserve_style(s5[21], [f"{e00['shuffle_read_bytes']/1024:.1f} / {e00['shuffle_write_bytes']/1024:.1f} KB (425 tasks)"])
+    set_text_preserve_style(s5[23], [f"{e02['shuffle_read_bytes']/1024:.1f} / {e02['shuffle_write_bytes']/1024:.1f} KB (30 tasks)"])
+    set_text_preserve_style(s5[25], ["-18.4% B | -92.9% tasks"])
 
-    set_text_preserve_style(s5[27], ["Run-to-run spread"])
-    set_text_preserve_style(s5[29], ["15.831s – 16.445s (~3.8%)"])
-    set_text_preserve_style(s5[31], ["13.302s – 13.467s (~1.2%)"])
-    set_text_preserve_style(s5[33], ["Ổn định hơn"])
+    set_text_preserve_style(s5[29], [f"{e00['max_task_time_ms']} ms (Exec: {e00['executor_run_time_ms']}ms)"])
+    set_text_preserve_style(s5[31], [f"{e02['max_task_time_ms']} ms (Exec: {e02['executor_run_time_ms']}ms)"])
+    set_text_preserve_style(s5[33], ["-6.7% max | -36.8% exec"])
 
-    set_text_preserve_style(s5[37], [f"{summary['total_items']:,}"])
-    set_text_preserve_style(s5[39], [f"{summary['total_items']:,}"])
-    set_text_preserve_style(s5[41], ["0 (Exact match)"])
+    set_text_preserve_style(s5[37], [f"{summary['total_items']:,} (19 summary)"])
+    set_text_preserve_style(s5[39], [f"{summary['total_items']:,} (19 summary)"])
+    set_text_preserve_style(s5[41], ["0 (SHA-256 exact)"])
 
-    set_text_preserve_style(s5[45], ["HOT:267k | RISING:285k"])
-    set_text_preserve_style(s5[47], ["HOT:267k | RISING:285k"])
+    set_text_preserve_style(s5[45], [f"HOT:{ld['HOT']//1000}k | RISING:{ld['RISING']//1000}k"])
+    set_text_preserve_style(s5[47], [f"HOT:{ld['HOT']//1000}k | RISING:{ld['RISING']//1000}k"])
     set_text_preserve_style(s5[49], ["PASS (GMV exact)"])
 
     # SLIDE 6: 05–06 • Correctness & Decision
     s6 = prs.slides[5].shapes
     set_text_preserve_style(s6[4], [
-        "Assertions (5/5 PASS):",
-        f"• Row count: {summary['total_items']:,} == {summary['total_items']:,} (PASS)",
-        "• Label dist: HOT 267k, RISING 285k, STABLE 123k, COLD 204k (PASS)",
-        "• GMV proxy & Schema contract: Exact match (PASS)",
+        "Assertions (7/7 PASS trên mọi EXP):",
+        f"• Row count: {summary['total_items']:,} | Null/Dup keys: 0 (PASS)",
+        f"• Labels: HOT {ld['HOT']:,}, RISING {ld['RISING']:,}, STABLE {ld['STABLE']:,}, COLD {ld['COLD']:,}",
+        f"• GMV proxy, Schema & SHA-256 ({summary['output_checksum'][:12]}…): Exact match",
     ])
     set_text_preserve_style(s6[7], [
-        f"KEEP (E01 – broadcast dim_df)",
-        f"Giảm median runtime {imp:.2f}% (vượt xa variance ~1.2–3.8%), plan xác nhận BroadcastHashJoin, 5/5 correctness PASS.",
+        f"KEEP E02 (-{e02['improvement_vs_baseline_pct']:.2f}% runtime, -92.9% tasks) | REVERT E01 & E03",
+        f"E03 cache 1-pass làm chậm +63.6% ({e03['median_sec']:.2f}s, maxTask {e03['max_task_time_ms']}ms) → bác bỏ dựa trên số liệu.",
     ])
     set_text_preserve_style(s6[10], [
-        "• Chạy local[2], dataset 5.74 MB nên JVM startup chiếm phần lớn runtime.",
-        "• Chỉ dùng broadcast() khi bảng dim nhỏ hơn ngưỡng bộ nhớ để tránh OOM.",
+        "• Đo trên local[2] (1.17M dòng, 23 MB input); khi scale 10×–100× trên cluster cần tăng shuffle.partitions theo cores hoặc bật AQE.",
     ])
     set_text_preserve_style(s6[13], [
-        "Buổi 11: Thiết kế tầng Storage (Parquet partitioning theo category_id/ingest_date, Data Lake) để tối ưu đọc/ghi end-to-end.",
+        "Buổi 11: Thiết kế tầng Storage (Parquet partitioning theo ingest_date/category_id, Snappy vs Zstd, Data Lake).",
     ])
 
     out_pptx.parent.mkdir(parents=True, exist_ok=True)
@@ -289,14 +299,17 @@ def make_pptx(summary: dict, chart_png: Path, out_pptx: Path) -> None:
 
 def main() -> int:
     summary = json.loads((REPORTS_DIR / "benchmark_summary.json").read_text(encoding="utf-8"))
+    base_hash = git_rev("baseline-cp4", "baseline-cp4")
+    opt_hash = "tag: optimized-cp4"
+
     chart_png = REPORTS_DIR / "benchmark_before_after.png"
     out_docx = DOCS_DIR / "BigData_DoAn4_Brief_Checkpoint4_Report.docx"
     out_pptx = DOCS_DIR / "BigData_DoAn4_Checkpoint4_Report.pptx"
 
     make_chart(summary, chart_png)
-    make_docx(summary, chart_png, out_docx)
-    make_pptx(summary, chart_png, out_pptx)
-    print("Generated:")
+    make_docx(summary, out_docx, base_hash, opt_hash)
+    make_pptx(summary, out_pptx, base_hash, opt_hash)
+    print(f"Generated reports (baseline={base_hash}, optimized={opt_hash}):")
     print(" ", chart_png)
     print(" ", out_docx)
     print(" ", out_pptx)
