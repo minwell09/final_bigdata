@@ -82,3 +82,72 @@ Mọi run cũng được append vào `metadata/ingest_log.jsonl` (sổ cái toà
 
 ## 7. Nguồn dữ liệu & provenance
 Xem [metadata/sources.md](metadata/sources.md).
+
+---
+
+## 8. Hướng dẫn chạy lại Đồ án 4 (Checkpoint 4 – Benchmark & Tối ưu Pipeline)
+
+Mọi thành viên trong nhóm có thể tái lập 100% kết quả benchmark của Đồ án 4 chỉ với 4 bước sau.
+
+### Bước 1: Clone repo & cài đặt môi trường
+Yêu cầu: **Python 3.11/3.12**, **JDK 17 hoặc 21**, **Git**.
+
+**Linux / macOS / Cloud Shell:**
+```bash
+git clone https://github.com/minwell09/final_bigdata.git
+cd final_bigdata
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt -r requirements-docs.txt
+```
+
+**Windows (PowerShell):**
+```powershell
+git clone https://github.com/minwell09/final_bigdata.git
+cd final_bigdata
+py -3.11 -m venv .venv
+.\.venv\Scripts\Activate.ps1
+pip install -r requirements.txt -r requirements-docs.txt
+```
+
+### Bước 2: Đảm bảo có dữ liệu raw (nếu máy mới clone chưa có `data/raw/`)
+Vì `data/raw/` không được commit lên Git, nếu thư mục chưa có dữ liệu thì chạy ingest trước:
+```bash
+python src/ingest_all.py
+```
+
+### Bước 3: Sinh bộ dữ liệu benchmark cố định (1,172,000 dòng)
+```bash
+python src/prepare_benchmark_data.py --scale 2000
+```
+Kết quả tạo ra trong `data/benchmark/`:
+- `products_fact.parquet` (~10.3 MB, 1,172,000 dòng)
+- `trends_dim.csv` (~12.9 MB, 32,500 dòng)
+
+### Bước 4: Chạy Benchmark & kiểm tra Correctness
+**Chạy lẻ từng chế độ (`baseline`, `e01_bhj`, `e02_part`, `e03_cache`):**
+```bash
+python src/pipeline_affiliate_spark.py --mode baseline
+python src/pipeline_affiliate_spark.py --mode e02_part
+```
+
+**Chạy trọn bộ 4 thí nghiệm × 3 runs (12 runs + Spark UI metrics + 7 correctness assertions):**
+```bash
+python src/run_benchmark_cp4.py
+```
+Kết quả tự động xuất vào `reports/`:
+- `reports/benchmark.csv` — toàn bộ 12 runs + Spark UI metrics (`shuffle`, `tasks`, `maxTask`, `execTime`)
+- `reports/benchmark_summary.json` — median, variance, speedup, 7 correctness assertions & SHA-256 checksum
+- `reports/explain-before.txt`, `reports/explain-after.txt` — execution plan trước/sau
+- `reports/spark_ui_stages_before.json`, `reports/spark_ui_stages_after.json` — bằng chứng Spark UI
+
+### Bước 5 (Tuỳ chọn): Sinh lại biểu đồ & báo cáo Word/PPTX
+```bash
+python tools/generate_cp4_reports.py
+```
+Xuất ra `reports/benchmark_before_after.png`, `docs/BigData_DoAn4_Brief_Checkpoint4_Report.docx` và `docs/BigData_DoAn4_Checkpoint4_Report.pptx`.
+
+### Các Git Tags quan trọng
+- `checkpoint-2` — Hoàn thành Ingestion & Raw Storage
+- `baseline-cp4` — Freeze pipeline gốc Đồ án 4
+- `optimized-cp4` / `checkpoint-4` — Bản tối ưu (`E02`: `shuffle.partitions=8`, -28.33% runtime, -92.9% tasks, 7/7 correctness PASS)
